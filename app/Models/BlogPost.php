@@ -17,4 +17,13 @@ class BlogPost extends Model
         'status',
         'published_at',
     ];
+
+
+public function author(){
+    return $this->belongsTo(User::class, 'user_id');
+}
+
+public function category(){
+    return $this->belongsTo(BlogCategory::class, 'category_id');
+}
 }

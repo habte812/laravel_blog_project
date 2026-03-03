@@ -20,8 +20,8 @@ return new class extends Migration
             $table->longText('content');
             $table->text('excerpt')->nullable();
             $table->string('thumbnail')->nullable();
-            $table->enum('status',['draft','publishied','archieved'])->default('draft');
-         $table->dateTime('published_at');
+            $table->enum('status',['draft','published','archieved'])->default('draft');
+            $table->dateTime('published_at');
             $table->timestamps();
         });
     }
