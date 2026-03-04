@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Models\BlogCategory;
 use App\Models\BlogPost;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,7 +17,7 @@ class BlogPostController extends Controller
 {
     public function index()
     {
-        $posts = BlogPost::get(['id','title','excerpt','thumbnail','published_at']);
+        $posts = BlogPost::get(['id', 'title', 'excerpt', 'thumbnail', 'published_at']);
         return response()->json([
             'status' => 'Success',
             'count' => $posts->count(),
@@ -32,6 +33,7 @@ class BlogPostController extends Controller
             'title' => 'required|string|max:255',
             'content' => 'required|string',
             'thumbnail' => 'nullable|image|max:2048',
+            'hashtags' => 'nullable'
         ]);
 
         if ($validator->fails()):
@@ -60,13 +62,22 @@ class BlogPostController extends Controller
                 'status' => $loggedinUser->role == 'admin' ? 'published' : 'draft',
                 'published_at' =>  date('Y-m-d H:i:s')
             ]);
+            $category = BlogCategory::find($request->category_id);
+            $allTags = str_replace(' ','',$category->name) . ',' . str_replace(' ','',$request->hashtags);
+            $tagedHashs = explode(',', $allTags);
+            $finalKeywords = collect($tagedHashs)->map(fn($tag) => trim(str_replace('#', '', $tag)))->implode(', ');
+            $post->seo()->create([
+                'post_id' => $post->id,
+                'meta_title' => $post->title,
+                'meta_description' => Str::limit(strip_tags($request->content), 160),
+                'meta_keywords' => $finalKeywords
+            ]);
 
             return response()->json([
                 'status'  => 'Success',
                 'message' => 'Post created successfully',
                 'data'    => $post
             ], 201);
-            
         } catch (\Exception $e) {
             return response()->json([
                 'status'  => 'Error',
@@ -77,7 +88,7 @@ class BlogPostController extends Controller
 
     public function show(string $id)
     {
-        $post = BlogPost::with(['author:id,name,role,profile_picture','category:id,name'])->find($id);
+        $post = BlogPost::with(['author:id,name,role,profile_picture','category:id,name', 'seo'])->find($id);
 
         if (!$post):
             return response()->json([
@@ -86,8 +97,8 @@ class BlogPostController extends Controller
             ], 404);
         endif;
         return response()->json([
-            'status'=>'Success',
-            'data'=> $post
+            'status' => 'Success',
+            'data' => $post
         ]);
     }
 
@@ -114,7 +125,8 @@ class BlogPostController extends Controller
             'title' => 'required|string|max:255',
             'content' => 'required|string',
             'thumbnail' => 'nullable|image|max:2048',
-            'remove_thumbnail' => 'nullable'
+            'remove_thumbnail' => 'nullable',
+            'hashtags' => 'nullable'
         ]);
         if ($validator->fails()):
             return response()->json([
@@ -126,29 +138,39 @@ class BlogPostController extends Controller
 
         try {
 
-        if ($request->hasFile('thumbnail')):
-            if ($post->thumbnail) {
-                Storage::disk('public')->delete($post->thumbnail);
-            }
-            $data['thumbnail'] = $request->file('thumbnail')->store('blog_thumbnail', 'public');
-        elseif ($request->boolean('remove_thumbnail') === true) :
-            if ($post->thumbnail) {
-                Storage::disk('public')->delete($post->thumbnail);
-            }
-            $data['thumbnail'] = null;
-        endif;
+            if ($request->hasFile('thumbnail')):
+                if ($post->thumbnail) {
+                    Storage::disk('public')->delete($post->thumbnail);
+                }
+                $data['thumbnail'] = $request->file('thumbnail')->store('blog_thumbnail', 'public');
+            elseif ($request->boolean('remove_thumbnail') === true) :
+                if ($post->thumbnail) {
+                    Storage::disk('public')->delete($post->thumbnail);
+                }
+                $data['thumbnail'] = null;
+            endif;
 
+            
+            $data['slug'] = Str::slug($request->title);
+            $data['excerpt'] = Str::limit(strip_tags($request->content), 150);
+            $post->update($data);
+            
+            $category = BlogCategory::find($request->category_id);
+            $allTags = str_replace(' ','',$category->name) . ',' . str_replace(' ','',$request->hashtags);
+            $tagedHashs = explode(',', $allTags);
+            $finalKeywords = collect($tagedHashs)->map(fn($tag) => trim(str_replace('#', '', $tag)))->implode(',');
 
-        $data['slug'] = Str::slug($request->title);
-        $data['excerpt'] = Str::limit(strip_tags($request->content), 150);
-        $post->update($data);
-
-        return response()->json([
-            'status' => 'Success',
-            'message' => 'Post updated successfully',
-            'data' => $post->fresh()
-        ], 200);
-
+            $post->seo()->update([
+                'post_id' => $post->id,
+                'meta_title' => $post->title,
+                'meta_description' => Str::limit(strip_tags($request->content), 160),
+                'meta_keywords' => $finalKeywords
+            ]);
+            return response()->json([
+                'status' => 'Success',
+                'message' => 'Post updated successfully',
+                'data' => $post->fresh()
+            ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'status'  => 'Error',

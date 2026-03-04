@@ -26,4 +26,8 @@ public function author(){
 public function category(){
     return $this->belongsTo(BlogCategory::class, 'category_id');
 }
+
+public function seo(){
+    return $this->hasOne(Seo::class, 'post_id');
+}
 }
