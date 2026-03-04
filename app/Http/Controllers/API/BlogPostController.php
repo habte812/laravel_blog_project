@@ -77,7 +77,7 @@ class BlogPostController extends Controller
 
     public function show(string $id)
     {
-        $post = BlogPost::with(['author:id,name,profile_picture','category:id,name'])->find($id);
+        $post = BlogPost::with(['author:id,name,role,profile_picture','category:id,name'])->find($id);
 
         if (!$post):
             return response()->json([
@@ -85,7 +85,6 @@ class BlogPostController extends Controller
                 'message' => 'Blog not found'
             ], 404);
         endif;
-
         return response()->json([
             'status'=>'Success',
             'data'=> $post
@@ -125,6 +124,7 @@ class BlogPostController extends Controller
         endif;
         $data =  $request->only(['category_id', 'title', 'content']);
 
+        try {
 
         if ($request->hasFile('thumbnail')):
             if ($post->thumbnail) {
@@ -139,17 +139,16 @@ class BlogPostController extends Controller
         endif;
 
 
-
         $data['slug'] = Str::slug($request->title);
         $data['excerpt'] = Str::limit(strip_tags($request->content), 150);
         $post->update($data);
-        
+
         return response()->json([
             'status' => 'Success',
             'message' => 'Post updated successfully',
             'data' => $post->fresh()
         ], 200);
-        try {
+
         } catch (\Exception $e) {
             return response()->json([
                 'status'  => 'Error',

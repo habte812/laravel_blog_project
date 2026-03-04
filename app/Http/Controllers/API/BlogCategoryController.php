@@ -5,7 +5,6 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\BlogCategory;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
@@ -31,15 +30,6 @@ class BlogCategoryController extends Controller
      */
     public function store(Request $request)
     {
-        $user = Auth::user();
-        if ($user->role !== 'admin'):
-            return response()->json([
-                'status' => 'Error',
-                'message' => 'Unauthorized access'
-            ], 401);
-        endif;
-
-
         $validator = Validator::make($request->all(), [
             'name' => "required|string|max:255|unique:blog_categories,name,",
         ]);
@@ -81,14 +71,6 @@ class BlogCategoryController extends Controller
     public function update(Request $request, string $id)
     {
         $category = BlogCategory::find($id);
-        $user = Auth::user();
-
-        if ($user->role !== 'admin'):
-            return response()->json([
-                'status' => 'Error',
-                'message' => 'Unauthorized access'
-            ], 401);
-        endif;
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255|unique:blog_categories,name,' . $id,
         ]);
@@ -130,7 +112,6 @@ class BlogCategoryController extends Controller
     {
         $category = BlogCategory::find($id);
         if ($category):
-
             $category->delete();
             return response()->json([
                 'status' => 'Succes',
