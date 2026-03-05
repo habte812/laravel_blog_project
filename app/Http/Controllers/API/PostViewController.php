@@ -12,25 +12,7 @@ use function Symfony\Component\Clock\now;
 
 class PostViewController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
-        //
-    }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-    public function show(string $id) {}
-    /**
-     * Display the specified resource.
-     */
     public function postviews(Request $request)
     {
         $request->validate([
@@ -61,19 +43,4 @@ class PostViewController extends Controller
         ]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
-    }
 }

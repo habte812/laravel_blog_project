@@ -24,13 +24,15 @@ Route::get('/profile',[AuthController::class, 'profile'])->name('profile');
 Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::apiResource('/categories', BlogCategoryController::class)->middleware(['role:admin']);
 Route::apiResource('/posts', BlogPostController::class)->middleware(['role:admin,author']);
-Route::apiResource('/comments', CommentController::class);
+Route::apiResource('/posts/comments', CommentController::class);
 Route::post('/posts/reaction',[LikeController::class, 'react'])->name('react');
 Route::post('/posts/views', [PostViewController::class, 'postviews'])->name('post_views');
+
 
 });
 
 
 Route::get('/categories', [BlogCategoryController::class, 'index'])->name('index');
 Route::get('/posts', [BlogPostController::class, 'index'])->name('index');
-Route::get('/comments', [CommentController::class, 'index'])->name('index');
+Route::get('/posts/{post_id}/comments', [CommentController::class, 'show'])->name('comments.show');
+Route::get('/posts/{comment_id}/replies', [CommentController::class, 'getReplies'])->name('comments.getReplies');
