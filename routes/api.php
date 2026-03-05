@@ -4,6 +4,8 @@ use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\BlogCategoryController;
 use App\Http\Controllers\API\BlogPostController;
 use App\Http\Controllers\API\CommentController;
+use App\Http\Controllers\API\LikeController;
+use App\Http\Controllers\API\PostViewController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -23,6 +25,9 @@ Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::apiResource('/categories', BlogCategoryController::class)->middleware(['role:admin']);
 Route::apiResource('/posts', BlogPostController::class)->middleware(['role:admin,author']);
 Route::apiResource('/comments', CommentController::class);
+Route::post('/posts/reaction',[LikeController::class, 'react'])->name('react');
+Route::post('/posts/views', [PostViewController::class, 'postviews'])->name('post_views');
+
 });
 
 

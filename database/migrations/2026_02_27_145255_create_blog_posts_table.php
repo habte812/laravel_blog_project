@@ -21,6 +21,9 @@ return new class extends Migration
             $table->text('excerpt')->nullable();
             $table->string('thumbnail')->nullable();
             $table->enum('status',['draft','published','archieved'])->default('draft');
+            $table->unsignedBigInteger('view_count')->default(0);
+            $table->unsignedBigInteger('like_count')->default(0);
+            $table->unsignedBigInteger('share_count')->default(0);
             $table->dateTime('published_at');
             $table->timestamps();
         });

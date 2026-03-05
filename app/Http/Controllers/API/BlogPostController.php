@@ -17,7 +17,7 @@ class BlogPostController extends Controller
 {
     public function index()
     {
-        $posts = BlogPost::get(['id', 'title', 'excerpt', 'thumbnail', 'published_at']);
+        $posts = BlogPost::get(['id', 'title', 'excerpt', 'thumbnail','view_count','like_count','share_count', 'published_at']);
         return response()->json([
             'status' => 'Success',
             'count' => $posts->count(),
@@ -156,7 +156,7 @@ class BlogPostController extends Controller
             $post->update($data);
             
             $category = BlogCategory::find($request->category_id);
-            $allTags = str_replace(' ','',$category->name) . ',' . str_replace(' ','',$request->hashtags);
+            $allTags = str_replace(' ','',$category->name) . ',' .str_replace(' ','',$request->hashtags) ;
             $tagedHashs = explode(',', $allTags);
             $finalKeywords = collect($tagedHashs)->map(fn($tag) => trim(str_replace('#', '', $tag)))->implode(',');
 
