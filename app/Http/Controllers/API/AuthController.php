@@ -1,99 +1,292 @@
 <?php
 
 namespace App\Http\Controllers\API;
+
 use App\Http\Controllers\Controller;
+use App\Http\Resources\UserResource;
 use App\Models\User;
+use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
-    public function register(Request $request){
-        $validator =Validator::make($request->all(),[
-            'name'=> 'required',
-            'email'=> 'required|email|unique:users,email',
-            'password'=> 'required|min:8|confirmed',
-            'profile_picture'=>'nullable|image|mimes:jpeg,png,jpg|max:2048'
+
+
+    public function register(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|min:8|confirmed',
+            'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
         ]);
 
-        if($validator->fails()):
+        if ($validator->fails()):
             return response()->json([
-                'status'=>'Error',
-                'message'=> $validator->errors()
+                'status' => 'Error',
+                'message' => $validator->errors()
             ], 422);
         endif;
 
-        $imagePath =null;
-        if($request->hasFile('profile_picture')):
-            $path = $request->file('profile_picture')->store('profile','public');
-            $imagePath = $path;
+        try {
+            $imagePath = null;
+            if ($request->hasFile('profile_picture')):
+                $imagePath = $request->file('profile_picture')->store('profile', 'public');
+            endif;
 
-        endif;
-
-       
-        User::create([
-            'name'=> $request->name,
-            'email'=> $request->email,
-            'password'=> Hash::make($request->password),
-            'profile_picture'=> $imagePath,
-            'role'=> $request->role
-        ]);
-
-        return response()->json([
-            'status'=>'Success',
-            'message'=>'Register Successfully'
-        ],201);
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'profile_picture' => $imagePath,
+                'role' => 'author'
+            ]);
+            $user->sendEmailVerificationNotification();
+            $token = $user->createToken('Blog_app_token')->plainTextToken;
+            return response()->json([
+                'status' => 'Success',
+                'message' => 'Register Successfully',
+                'data' => [
+                    'token' => $token,
+                    'data' => new UserResource($user)
+                ]
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'Error',
+                'message' => 'Registration failed. Please try again later.'.$e
+            ], 500);
+        }
     }
 
 
 
 
 
-public function login(Request $request){
-    $credentials  = $request->validate([
-   'email'=>'required|email',
-   'password'=>'required'
-    ]);
-if(Auth::attempt($credentials)):
-    $user = Auth::user();
-    $token = $user->createToken('Blog_app_token')->plainTextToken;
+    public function login(Request $request)
+    {
+        $credentials = $request->validate([
+            'email' => 'required|email',
+            'password' => 'required'
+        ]);
 
-    return response()->json([
-        'status'=>'Success',
-        'message'=>'Login Successfully',
-        'data'=> [
-            'token'=>$token,
-            'user'=>$user
-        ]
-    ],200);
-endif;
+        try {
+            if (Auth::attempt($credentials)):
+                $user = Auth::user();
+                $user->tokens()->delete();
+                $token = $user->createToken('Blog_app_token')->plainTextToken;
+                return response()->json([
+                    'status' => 'Success',
+                    'message' => 'Login Successfully',
+                    'data' => [
+                        'token' => $token,
+                        'user' => new UserResource($user)
+                    ]
+                ], 200);
+            endif;
+            return response()->json([
+                'status' => 'Error',
+                'message' => 'Invalid Creadential'
+            ], 401);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'Error',
+                'message' => 'An unexpected error occurred'
+            ], 500);
+        }
+    }
 
-  return response()->json([
-    'status'=>'Error',
-    'message'=>'Invalid Creadential'
-  ],401);
-}
+
+
+    public function profile(Request $request)
+    {
+        $user = $request->user();
+        $user->loadCount('blog_posts');
+        if (!$user):
+            return response()->json([
+                'status' => 'Error',
+                'message' => 'User not found'
+            ], 404);
+        endif;
+        return response()->json([
+            'status' => 'Success',
+            'data' => new UserResource($user)
+        ], 200);
+    }
 
 
 
-public function profile(Request $request){
-$user =$request->user();
+    public function logout(Request $request)
+    {
+        $user = $request->user();
+        if (!$user):
+            return response()->json([
+                'status' => 'Error',
+                'message' => 'User not found'
+            ], 404);
+        endif;
+        try {
+            $user->tokens()->delete();
+            return response()->json([
+                'status' => 'Success',
+                'message' => 'Logged out successfully'
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'Error',
+                'message' => 'An unexpected error occurred'
+            ], 500);
+        }
+    }
 
- return response()->json([
-    'status'=> 'Success',
-     'data'=> $user
- ],200);
+    public function updateProfile(Request $request)
+    {
+        $user = Auth::user();
+        $validator = Validator::make($request->all(), [
+            'name' => 'required',
+            'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
+        ]);
+        if ($validator->fails()):
+            return response()->json([
+                'status' => 'Error',
+                'message' => $validator->errors()
+            ], 422);
+        endif;
 
-}
-public function logout(Request $request){
+        $data = $request->only(['name', 'profile_picture']);
 
-$request->user()->tokens()->delete();
+        try {
+            
 
-return response()->json([
-        'status' => 'Success',
-        'message' => 'Logged out successfully'
-    ], 200);
-}
+            if ($request->hasFile('profile_picture')):
+                if ($user->profile_picture && Storage::disk('public')->exists($user->profile_picture)) {
+                    Storage::disk('public')->delete($user->profile_picture);
+                }
+                $data['profile_picture'] = $request->file('profile_picture')->store('profile', 'public');
+            endif;
+            $data['name'] = $request->name;
+            $user->update($data);
+            return response()->json([
+                'status' => 'Success',
+                'message' => 'Profile updated successfully',
+                'user' => new UserResource($user)
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'Error',
+                'message' => 'An unexpected error occurred'
+            ], 500);
+        }
+    }
+
+
+    public function forgetPassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email|exists:users,email',
+        ]);
+        if ($validator->fails()):
+            return response()->json([
+                'status' => 'Error',
+                'message' => $validator->errors()
+            ], 422);
+        endif;
+        $status = Password::sendResetLink($request->only('email'));
+        return $status === Password::RESET_LINK_SENT ?
+            response()->json([
+                [
+                    'status' => 'Success',
+                    'message' => 'Reset link sent to your email.'
+                ],
+
+            ], 200) :
+            response()->json([
+                'status' => 'Error',
+                'message' => 'Unable to send reset link.'
+            ], 500);
+    }
+
+
+    public function resetPassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'token' => 'required',
+            'email' => 'required|email|exists:users,email',
+            'password' => 'required|min:8|confirmed',
+        ]);
+
+        if ($validator->fails()):
+            return response()->json([
+                'status' => 'Error',
+                'message' => $validator->errors()
+            ], 422);
+        endif;
+        try {
+            $status = Password::reset(
+                $request->only('email', 'password', 'password_confirmation', 'token'),
+                function ($user, $password) {
+                    $user->forceFill([
+                        'password' => Hash::make($password)
+                    ]);
+                    $user->setRememberToken(Str::random(60));
+                    $user->save();
+
+                    event(new PasswordReset($user));
+                }
+            );
+            return
+                $status === Password::PASSWORD_RESET ?
+                response()->json(['status' => 'Success', 'message' => 'Password has been reset.'], 200)
+                : response()->json(['status' => 'Error', 'message' => 'Invalid token or email.'], 400);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'Error',
+                'message' => "Unable to send reset link."
+            ], 500);
+        }
+    }
+
+
+
+    public function changePassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'current_password' => 'required',
+            'new_password' => 'required|min:8|confirmed',
+        ]);
+
+        if ($validator->fails()):
+            return response()->json([
+                'status' => 'Error',
+                'message' => $validator->errors()
+            ], 422);
+        endif;
+        try {
+            $user = $request->user();
+            if (!Hash::check($request->current_password, $user->password)) {
+                return response()->json([
+                    'status' => 'Error',
+                    'message' => 'The current password you entered is incorrect.'
+                ], 401);
+            }
+            $user->update([
+                'password' => Hash::make($request->new_password),
+            ]);
+            return response()->json([
+                'status' => 'Success',
+                'message' => 'Password updated successfully.'
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'Error',
+                'message' => "Unable to change password"
+            ], 500);
+        }
+    }
 }

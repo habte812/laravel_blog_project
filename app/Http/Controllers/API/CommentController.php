@@ -40,7 +40,7 @@ class CommentController extends Controller
                 'status' => $role->role == 'admin' ? 'approved' : 'pending'
             ]);
             $post = BlogPost::find($request->post_id);
-            if($post){
+            if ($post) {
                 $post->increment('commet_count');
             }
             return response()->json([
@@ -50,7 +50,7 @@ class CommentController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'status' => "Error",
-                'message' => 'Unknown error'.$e
+                'message' => 'Unknown error' . $e
             ], 500);
         }
     }
@@ -88,13 +88,14 @@ class CommentController extends Controller
     public function destroy(string $id)
     {
         $comment =   Comment::find($id);
-        $post = BlogPost::find($comment->post_id);
         if (!$comment) {
             return response()->json([
                 'status' => 'Error',
                 'message' => 'Comment not found'
             ], 404);
         }
+
+        $post = BlogPost::find($comment->post_id);
         $user = Auth::user();
 
         if ($user->id !== $comment->user_id && $user->role !== 'admin') {
@@ -105,11 +106,12 @@ class CommentController extends Controller
         }
 
         try {
-            $totalComment = 1 + $comment->replies()->count();
-            $comment->delete();
-            if($post){
-                $post->decrement('commet_count',$totalComment);
-            }
+                $totalComment = 1 + $comment->replies()->count();
+                $comment->delete();
+                if ($post) {
+                    $post->decrement('commet_count', $totalComment);
+                }
+          
             return response()->json([
                 'status' => "Error",
                 'message' => 'Deleted'

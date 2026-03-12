@@ -16,7 +16,6 @@ class BlogCategoryController extends Controller
     public function index()
     {
         $categories = BlogCategory::get();
-
         return response()->json([
             'status' => 'Success',
             'count' => $categories->count(),

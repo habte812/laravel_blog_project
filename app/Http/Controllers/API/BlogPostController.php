@@ -7,6 +7,7 @@ use App\Models\BlogCategory;
 use App\Models\BlogPost;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -17,7 +18,9 @@ class BlogPostController extends Controller
 {
     public function index()
     {
-        $posts = BlogPost::get(['id', 'title', 'excerpt', 'thumbnail','view_count','like_count','share_count', 'published_at']);
+        $posts = BlogPost::with(['author:id,name,profile_picture'])
+            ->select(['id', 'user_id', 'title', 'excerpt', 'thumbnail', 'view_count', 'like_count', 'share_count', 'published_at', 'created_at'])
+            ->get();
         return response()->json([
             'status' => 'Success',
             'count' => $posts->count(),
@@ -63,9 +66,9 @@ class BlogPostController extends Controller
                 'published_at' =>  date('Y-m-d H:i:s')
             ]);
             $category = BlogCategory::find($request->category_id);
-            $allTags = str_replace(' ','',$category->name) . ',' . str_replace(' ','',$request->hashtags);
+            $allTags = str_replace(' ', '', $category->name) . ',' . str_replace(' ', '', $request->hashtags);
             $tagedHashs = explode(',', $allTags);
-            $finalKeywords = collect($tagedHashs)->map(fn($tag) => trim(str_replace('#', '', $tag)))->implode(', ');
+            $finalKeywords = collect($tagedHashs)->map(fn($tag) => trim(str_replace('#', '', $tag)))->implode(',');
             $post->seo()->create([
                 'post_id' => $post->id,
                 'meta_title' => $post->title,
@@ -81,14 +84,14 @@ class BlogPostController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'status'  => 'Error',
-                'message' => 'Something went wrong on the server.' . $e->getMessage()
+                'message' => 'Something went wrong on the server.'
             ], 500);
         }
     }
 
     public function show(string $id)
     {
-        $post = BlogPost::with(['author:id,name,role,profile_picture','category:id,name', 'seo'])->find($id);
+        $post = BlogPost::with(['author:id,name,role,profile_picture', 'category:id,name', 'seo'])->find($id);
 
         if (!$post):
             return response()->json([
@@ -134,29 +137,29 @@ class BlogPostController extends Controller
                 'message' => $validator->errors()
             ], 422);
         endif;
-        $data =  $request->only(['category_id', 'title', 'content']);
+        $data =  $request->only(['category_id', 'title', 'content', 'thumbnail']);
 
         try {
 
             if ($request->hasFile('thumbnail')):
-                if ($post->thumbnail) {
+                if ($post->thumbnail && Storage::disk('public')->exists($post->thumbnail)) {
                     Storage::disk('public')->delete($post->thumbnail);
                 }
                 $data['thumbnail'] = $request->file('thumbnail')->store('blog_thumbnail', 'public');
             elseif ($request->boolean('remove_thumbnail') === true) :
-                if ($post->thumbnail) {
+                if ($post->thumbnail && Storage::disk('public')->exists($post->thumbnail)) {
                     Storage::disk('public')->delete($post->thumbnail);
                 }
                 $data['thumbnail'] = null;
             endif;
 
-            
+
             $data['slug'] = Str::slug($request->title);
             $data['excerpt'] = Str::limit(strip_tags($request->content), 150);
             $post->update($data);
-            
+
             $category = BlogCategory::find($request->category_id);
-            $allTags = str_replace(' ','',$category->name) . ',' .str_replace(' ','',$request->hashtags) ;
+            $allTags = str_replace(' ', '', $category->name) . ',' . str_replace(' ', '', $request->hashtags);
             $tagedHashs = explode(',', $allTags);
             $finalKeywords = collect($tagedHashs)->map(fn($tag) => trim(str_replace('#', '', $tag)))->implode(',');
 
@@ -197,7 +200,7 @@ class BlogPostController extends Controller
             ], 401);
         endif;
         try {
-            if ($post->thumbnail):
+            if ($post->thumbnail&& Storage::disk('public')->exists($post->thumbnail)):
                 Storage::disk('public')->delete($post->thumbnail);
             endif;
             $post->delete();

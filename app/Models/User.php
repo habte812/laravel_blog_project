@@ -3,12 +3,17 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-class User extends Authenticatable
+
+class User extends Authenticatable implements   MustVerifyEmail , FilamentUser
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasApiTokens;
@@ -35,6 +40,7 @@ class User extends Authenticatable
         'password',
         'remember_token',
     ];
+protected $appends = ['profile_picture_url'];
 
     /**
      * Get the attributes that should be cast.
@@ -48,4 +54,20 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+
+public function getProfilePictureUrlAttribute()
+{
+    return $this->profile_picture? asset('storage/' . $this->profile_picture) : null;
+}
+
+
+public function blog_posts(){
+    return $this->hasMany(BlogPost::class, 'user_id');
+}
+
+public function canAccessPanel(Panel $panel):bool{
+    return $this->role == 'admin' && $this->status =='active';
+
+}
 }

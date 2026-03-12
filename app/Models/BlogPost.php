@@ -2,8 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Model;
 class BlogPost extends Model
 {
     protected $fillable = [
@@ -18,7 +19,7 @@ class BlogPost extends Model
         'published_at',
     ];
 
-
+protected $appends = ['time_ago', 'thumbnail_url'];
 public function author(){
     return $this->belongsTo(User::class, 'user_id');
 }
@@ -29,5 +30,18 @@ public function category(){
 
 public function seo(){
     return $this->hasOne(Seo::class, 'post_id');
+}
+// public function getThumbnailAttribute($value){
+//     return $value? asset('storage/'.$value): null;
+// }
+public function getThumbnailUrlAttribute() 
+{
+    return $this->thumbnail ? asset('storage/' . $this->thumbnail) : null;
+}
+public function timeAgo(): Attribute{
+ return Attribute::make(
+    get: fn ()=>$this->created_at->diffForHumans()
+ );
+
 }
 }

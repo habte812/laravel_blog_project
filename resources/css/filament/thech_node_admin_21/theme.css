@@ -1,0 +1,71 @@
+@import '../../../../vendor/filament/filament/resources/css/theme.css';
+
+@source '../../../../app/Filament/**/*';
+@source '../../../../resources/views/filament/**/*';
+
+
+ .fi-sidebar {
+        @apply bg-white dark:bg-gray-900 border-e border-gray-100 dark:border-white/5 shadow-sm;
+    }
+ .fi-topbar {
+             @apply shadow-none ring-0; }
+.fi-topbar-ctn {
+        @apply shadow-none ;
+    }
+    .fi-sidebar-item-button {
+        @apply mx-2 rounded-lg transition-colors duration-200;
+    }
+
+    .fi-sidebar-item-active {
+        @apply bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400 font-bold;
+    }
+
+    
+    .fi-btn-color-primary {
+        @apply shadow-md shadow-primary-500/20 hover:shadow-primary-500/40 active:scale-95 transition-all;
+    }
+
+    .fi-ta-ctn {
+        @apply shadow-sm border-none bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm rounded-xl overflow-hidden ;
+    }
+
+    /* 2. Header Cells: Uppercase, bold, and subtle background */
+    .fi-ta-header-cell {
+        @apply bg-gray-50/50 dark:bg-white/5 py-4 text-[10px] uppercase tracking-widest font-bold text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-white/5;
+    }
+
+    /* 3. Row Hover Effect: Make rows "glow" when you mouse over them */
+    .fi-ta-row {
+        @apply transition-all duration-200 hover:bg-primary-50/30 dark:hover:bg-primary-500/5;
+    }
+
+    /* 4. Cell Typography: Make the primary record (like Blog Title) stand out */
+    .fi-ta-text-item-label {
+        @apply text-sm font-medium text-gray-900 dark:text-gray-100;
+    }
+
+    /* 5. Image/Thumbnail Styling: Rounded with a border */
+    .fi-ta-image-item img {
+        @apply rounded-lg shadow-sm border border-gray-100 dark:border-white/10;
+    }
+
+    /* 6. Empty State: Make it look intentional, not like a bug */
+    .fi-ta-empty-state {
+        @apply py-12 bg-transparent;
+    }
+
+    .fi-ta-action {
+        @apply transition-transform duration-200 hover:scale-110 active:scale-95 p-2 rounded-md;
+    }
+
+    /* 8. Search Input: Rounded and modern */
+    .fi-ta-header-search-field input {
+        @apply rounded-full border-gray-200 dark:border-white/10 bg-white/80 dark:bg-gray-800/80 focus:ring-primary-500;
+    }
+
+    .fi-fo-section {
+        @apply rounded-xl border-none shadow-[0_5px_20px_rgb(0,0,0,0.03)] dark:shadow-none dark:bg-gray-900/50 p-6 transition-all;
+    }
+.fi-sidebar-item>.fi-sidebar-item-btn{
+    @apply rounded-2xl;
+}
