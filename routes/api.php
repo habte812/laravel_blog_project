@@ -19,29 +19,27 @@ Route::post('/register',[AuthController::class, 'register'])->name('register');
 Route::post('/login',[AuthController::class, 'login'])->name('login');
 
 Route::post('/password/forget-password', [AuthController::class, 'forgetPassword'])->name('password.email');
-Route::get('/password/reset/{token}', function ($token){
-    return response()->json(['token' => $token, 'message' => 'Please reset your password in the app.']);
-})->name('password.reset');
 Route::post('/password/reset-password', [AuthController::class, 'resetPassword'])->name('password.update');
+Route::get('/posts/{user}/author-profile', [AuthController::class,'getAuthorProfile'])->name('posts.authorProfile');
 
 
 
-
-Route:: middleware('auth:sanctum')->group( function (){
-Route::get('/profile',[AuthController::class, 'profile'])->name('profile');
-Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
-Route::post('/profile/update',[AuthController::class,'updateProfile'])->name('update_profile');
+Route:: middleware(['auth:sanctum','throttle:api'])->group( function (){
+Route::get('/profile',[AuthController::class, 'profile'])->name('user.profile');
+Route::post('/logout', [AuthController::class, 'logout'])->name('user.logout');
+Route::post('/profile/update',[AuthController::class,'updateProfile'])->name('user.update_profile');
 Route::post('/password/change-password', [AuthController::class, 'changePassword'])->name('password.change');
 
-Route::apiResource('/categories', BlogCategoryController::class)->middleware(['role:admin']);
-Route::post('/posts/views', [PostViewController::class, 'postviews'])->name('post_views');
+Route::apiResource('/categories', BlogCategoryController::class)->middleware(['role:admin'])->except(['index']);
+
 
 Route::post('/email/verification',[EmailVerificationController::class, 'sendEmailVerification'])->name('verification.send');
 Route::get('/verify-email/{id}/{hash}', [EmailVerificationController::class, 'verify'])->name('verification.verify');
 
-Route::apiResource('/posts', BlogPostController::class)->middleware(['role:admin,author']);
+Route::apiResource('/posts', BlogPostController::class)->middleware(['role:admin,author'])->except(['index','show']);
+
 Route::middleware('verified')->group(function(){
-Route::post('/posts/reaction',[LikeController::class, 'react'])->name('react');
+Route::post('/posts/reaction',[LikeController::class, 'react'])->name('posts.react');
 Route::apiResource('/posts/comments', CommentController::class);
 });
 
@@ -49,7 +47,9 @@ Route::apiResource('/posts/comments', CommentController::class);
 
 
 
-Route::get('/categories', [BlogCategoryController::class, 'index'])->name('index');
-Route::get('/posts', [BlogPostController::class, 'index'])->name('index');
+Route::get('/categories', [BlogCategoryController::class, 'index'])->name('categories.index');
+Route::get('/posts', [BlogPostController::class, 'index'])->name('posts.index');
+Route::get('/posts/{id}', [BlogPostController::class, 'show'])->name('posts.show');
 Route::get('/posts/{post_id}/comments', [CommentController::class, 'show'])->name('comments.show');
 Route::get('/posts/{comment_id}/replies', [CommentController::class, 'getReplies'])->name('comments.getReplies');
+Route::post('/posts/views', [PostViewController::class, 'postviews'])->name('posts.views');

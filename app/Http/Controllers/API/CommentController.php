@@ -30,14 +30,12 @@ class CommentController extends Controller
         endif;
 
         try {
-            $user = Auth::id();
-            $role = Auth::user();
+            $user = $request->user();
             $comment = Comment::create([
                 'post_id' => $request->post_id,
-                'user_id' => $user,
+                'user_id' => $user->id,
                 'content' => $request->content,
                 'parent_id' => $request->parent_id,
-                'status' => $role->role == 'admin' ? 'approved' : 'pending'
             ]);
             $post = BlogPost::find($request->post_id);
             if ($post) {

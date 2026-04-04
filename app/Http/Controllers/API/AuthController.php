@@ -24,7 +24,7 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:8|confirmed',
-            'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
+            'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,avif,webp|max:2048'
         ]);
 
         if ($validator->fails()):
@@ -54,13 +54,14 @@ class AuthController extends Controller
                 'message' => 'Register Successfully',
                 'data' => [
                     'token' => $token,
-                    'data' => new UserResource($user)
-                ]
+                    'token_type' => 'Bearer',
+                    'user' => new UserResource($user),
+                ],
             ], 201);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'Error',
-                'message' => 'Registration failed. Please try again later.'.$e
+                'message' => 'Registration failed. Please try again later.' . $e
             ], 500);
         }
     }
@@ -86,8 +87,9 @@ class AuthController extends Controller
                     'message' => 'Login Successfully',
                     'data' => [
                         'token' => $token,
-                        'user' => new UserResource($user)
-                    ]
+                        'token_type' => 'Bearer',
+                        'user' => new UserResource($user),
+                    ],
                 ], 200);
             endif;
             return response()->json([
@@ -147,10 +149,11 @@ class AuthController extends Controller
 
     public function updateProfile(Request $request)
     {
-        $user = Auth::user();
+        $user = $request->user();
         $validator = Validator::make($request->all(), [
             'name' => 'required',
-            'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
+            'bio' => 'nullable',
+            'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,avif,webp|max:2048'
         ]);
         if ($validator->fails()):
             return response()->json([
@@ -159,11 +162,8 @@ class AuthController extends Controller
             ], 422);
         endif;
 
-        $data = $request->only(['name', 'profile_picture']);
-
+        $data = $request->only(['name', 'bio', 'profile_picture']);
         try {
-            
-
             if ($request->hasFile('profile_picture')):
                 if ($user->profile_picture && Storage::disk('public')->exists($user->profile_picture)) {
                     Storage::disk('public')->delete($user->profile_picture);
@@ -171,11 +171,12 @@ class AuthController extends Controller
                 $data['profile_picture'] = $request->file('profile_picture')->store('profile', 'public');
             endif;
             $data['name'] = $request->name;
+            $data['bio'] = $request->bio;
             $user->update($data);
             return response()->json([
                 'status' => 'Success',
                 'message' => 'Profile updated successfully',
-                'user' => new UserResource($user)
+                'data' => new UserResource($user)
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
@@ -200,10 +201,10 @@ class AuthController extends Controller
         $status = Password::sendResetLink($request->only('email'));
         return $status === Password::RESET_LINK_SENT ?
             response()->json([
-                [
-                    'status' => 'Success',
-                    'message' => 'Reset link sent to your email.'
-                ],
+
+                'status' => 'Success',
+                'message' => 'Reset link sent to your email.'
+
 
             ], 200) :
             response()->json([
@@ -247,7 +248,7 @@ class AuthController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'Error',
-                'message' => "Unable to send reset link."
+                'message' => "Unable to reset the password."
             ], 500);
         }
     }
@@ -288,5 +289,23 @@ class AuthController extends Controller
                 'message' => "Unable to change password"
             ], 500);
         }
+    }
+
+    public function getAuthorProfile(User $user)
+    {     
+        $user->loadCount('blog_posts');
+        return response()->json([
+            'status' => 'Success',
+            'data' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'bio' => $user->bio,
+                'profile_picture_url' => $user->profile_picture_url,
+                'posts_count' => $user->blog_posts_count,
+                'is_owner'=>auth('sanctum')?->id()=== $user->id,
+                'joined_at' => $user->created_at->format('M Y'),
+
+            ]
+        ]);
     }
 }

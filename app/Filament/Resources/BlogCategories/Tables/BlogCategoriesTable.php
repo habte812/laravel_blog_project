@@ -7,6 +7,7 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Filament\Tables\Columns\ImageColumn;
 
 class BlogCategoriesTable
 {
@@ -18,6 +19,13 @@ class BlogCategoriesTable
                     ->searchable(),
                 TextColumn::make('slug')
                     ->searchable(),
+                ImageColumn::make('category_image')
+                    ->label('Category Image')
+                    ->disk('public')
+                    ->visibility('public')
+                    ->imageSize(40)->extraImgAttributes([
+                       'loading' => 'lazy'
+                    ]),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()

@@ -23,7 +23,7 @@ class BlogPostsTable
                     ->numeric()
                     ->sortable(),
                 TextColumn::make('title')
-                    ->searchable(),
+                    ->searchable()->limit(50,'...'),
                     
                 ImageColumn::make('thumbnail')
                     ->label('Thumbnail')
@@ -31,7 +31,6 @@ class BlogPostsTable
                     ->visibility('public')
                     ->imageSize(40)->extraImgAttributes([
                        'loading' => 'lazy'
-
                     ]),
                  TextColumn::make('status')
                     ->badge()

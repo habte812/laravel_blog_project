@@ -9,7 +9,7 @@ use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
-use Filament\Forms\Set;
+use Filament\Schemas\Components\Utilities\Set as UtilitiesSet;
 use Illuminate\Support\Str;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Storage;
@@ -21,14 +21,17 @@ class BlogPostForm
         return $schema
             ->components([
                 TextInput::make('title')
-                    ->required()
-                    ->live(onBlur: true) // Auto-generate slug when title changes
-                    ->afterStateUpdated(fn(Set $set, ?string $state) => $set('slug', Str::slug($state))),
-
-                TextInput::make('slug')
-                    ->unique(ignoreRecord: true),
-
-                RichEditor::make('content') // Better for formatting blog posts
+                ->required()
+                ->live(onBlur: true)
+                ->afterStateUpdated(function (UtilitiesSet $set, ?string $state) {
+                               if (!$state) return;
+                               $slug = Str::slug($state) . '-' . Str::lower(Str::random(5));
+                               $set('slug', $slug);}),
+               TextInput::make('slug')
+                ->unique(ignoreRecord: true) 
+                ->maxLength(255)
+                ->readOnly(),
+                RichEditor::make('content') 
                     ->required()
                     ->columnSpanFull(),
 
@@ -37,7 +40,7 @@ class BlogPostForm
                     ->columnSpanFull(),
 
 
-                FileUpload::make('thumbnail') // Real image uploader
+                FileUpload::make('thumbnail') 
                     ->image()
                     ->disk('public')
                     ->directory('blog_thumbnail')

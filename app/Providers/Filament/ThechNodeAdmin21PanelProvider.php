@@ -29,7 +29,8 @@ class ThechNodeAdmin21PanelProvider extends PanelProvider
             ->id('thech_node_admin_21')
             ->path('thech_node_admin_21')
             ->viteTheme('resources/css/filament/thech_node_admin_21/theme.css')
-            ->login()->sidebarCollapsibleOnDesktop()
+            ->login()
+            ->sidebarCollapsibleOnDesktop()->sidebarWidth(13)
             ->colors([
                 'primary' => '#0bff17ff',
 

@@ -10,6 +10,7 @@ class PostView extends Model
         'post_id',
         'user_id',
         'times_viewed',
+        'ip_address'
     ];
     public function post() {
     return $this->belongsTo(BlogPost::class, 'post_id');
