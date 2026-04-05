@@ -23,6 +23,9 @@ class UserResource extends JsonResource
         'profile_picture' => $this->profile_picture, 
         'profile_picture_url'=>$this->profile_picture_url,
         'posts_count'=>$this->whenCounted('blog_posts'),
+        'followings_count'=>$this->whenCounted('followings'),
+        'followers_count'=>$this->whenCounted('followers'),
+        'is_following'=> $request->user('sanctum')? $this->followers()->where('follower_id', $request->user('sanctum')->id)->exists():false,
         'joined_at' => $this->created_at->format('M d, Y'),
         
     ];

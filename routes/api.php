@@ -5,6 +5,7 @@ use App\Http\Controllers\API\BlogCategoryController;
 use App\Http\Controllers\API\BlogPostController;
 use App\Http\Controllers\API\CommentController;
 use App\Http\Controllers\API\EmailVerificationController;
+use App\Http\Controllers\API\FollowController;
 use App\Http\Controllers\API\LikeController;
 use App\Http\Controllers\API\PostViewController;
 use Illuminate\Http\Request;
@@ -37,7 +38,7 @@ Route::post('/email/verification',[EmailVerificationController::class, 'sendEmai
 Route::get('/verify-email/{id}/{hash}', [EmailVerificationController::class, 'verify'])->name('verification.verify');
 
 Route::apiResource('/posts', BlogPostController::class)->middleware(['role:admin,author'])->except(['index','show']);
-
+Route::post('/posts/{user}/follow',[FollowController::class,'toggleFollow'])->name('posts.follow');
 Route::middleware('verified')->group(function(){
 Route::post('/posts/reaction',[LikeController::class, 'react'])->name('posts.react');
 Route::apiResource('/posts/comments', CommentController::class);

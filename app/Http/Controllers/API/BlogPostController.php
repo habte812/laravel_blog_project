@@ -280,14 +280,12 @@ class BlogPostController extends Controller
     }
 
 
-    public function shareBlogPosts(string $id)
+    public function sharePosts(string $id)
     {
-        $blog = BlogPost::find($id);
-        if (!$blog):
-            return response()->json([
-                'status' => 'Error',
-                'message' => 'Blog not found'
-            ], 404);
-        endif;
+        $blog = BlogPost::with('seo') -> find($id);
+        if (!$blog) {
+        abort(404);
+    }
+    return view('share.post',compact('post'));
     }
 }

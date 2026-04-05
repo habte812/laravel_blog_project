@@ -109,7 +109,7 @@ class AuthController extends Controller
     public function profile(Request $request)
     {
         $user = $request->user();
-        $user->loadCount('blog_posts');
+        $user->loadCount(['blog_posts','followings','followers']);
         if (!$user):
             return response()->json([
                 'status' => 'Error',
@@ -292,8 +292,8 @@ class AuthController extends Controller
     }
 
     public function getAuthorProfile(User $user)
-    {     
-        $user->loadCount('blog_posts');
+    {           
+        $user->loadCount(['blog_posts','followings','followers']);
         return response()->json([
             'status' => 'Success',
             'data' => [
@@ -302,6 +302,8 @@ class AuthController extends Controller
                 'bio' => $user->bio,
                 'profile_picture_url' => $user->profile_picture_url,
                 'posts_count' => $user->blog_posts_count,
+                'followings_count' => $user->followings_count,
+                'followers_count' => $user->followers_count,
                 'is_owner'=>auth('sanctum')?->id()=== $user->id,
                 'joined_at' => $user->created_at->format('M Y'),
 

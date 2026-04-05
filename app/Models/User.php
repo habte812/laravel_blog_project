@@ -41,7 +41,7 @@ class User extends Authenticatable implements   MustVerifyEmail , FilamentUser
         'password',
         'remember_token',
     ];
-protected $appends = ['profile_picture_url'];
+protected $appends = ['profile_picture_url','is_following'];
 
     /**
      * Get the attributes that should be cast.
@@ -70,5 +70,21 @@ public function blog_posts(){
 public function canAccessPanel(Panel $panel):bool{
     return $this->role == 'admin' && $this->status =='active';
 
+}
+
+public function followings(){
+return $this->belongsToMany(User::class,'followings', 'follower_id','following_id');
+
+}
+public function followers(){
+return $this->belongsToMany(User::class,'followings', 'following_id','follower_id');
+}
+public function getIsFollowingAttribute():bool{
+ if(!auth('sanctum')->check()){
+    return false;
+ }
+ return $this->followers()
+        ->where('follower_id', auth('sanctum')->id())
+        ->exists();
 }
 }
