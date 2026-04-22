@@ -25,7 +25,7 @@ class CommentController extends Controller
         if ($validator->fails()):
             return response()->json([
                 'status' => 'Error',
-                'message' => $validator->errors()
+                'message' => $validator->errors()->messages()
             ]);
         endif;
 
@@ -41,14 +41,17 @@ class CommentController extends Controller
             if ($post) {
                 $post->increment('commet_count');
             }
+            $comment->load(['user:id,name,profile_picture'])->loadCount('replies');
             return response()->json([
                 'status' => 'Success',
-                'data' => $comment
+                'message'=>'Comment created successfully',
+                'data' =>  $comment
+                
             ], 201);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => "Error",
-                'message' => 'Unknown error' . $e
+                'message' => 'Unknown error'
             ], 500);
         }
     }
@@ -58,28 +61,28 @@ class CommentController extends Controller
     {
         $comments = Comment::where('post_id', $post_id)
             ->whereNull('parent_id')
-            ->with(['user:id,name,profile_picture'])
+            ->with(['user:id,name,profile_picture'])->withCount('replies')
             ->latest()->get();
 
         return response()->json([
             'status' => 'Success',
             'count' => $comments->count(),
             'data' => $comments
-        ]);
+        ],200);
     }
 
     public function getReplies($comment_id)
     {
         $replies = Comment::where('parent_id', $comment_id)
             ->with(['user:id,name,profile_picture'])
-            ->oldest()
+            ->oldest()->withCount('replies')
             ->get();
 
         return response()->json([
             'status' => 'Success',
             'count' => $replies->count(),
             'data' => $replies
-        ]);
+        ],200);
     }
 
 
@@ -94,6 +97,12 @@ class CommentController extends Controller
         }
 
         $post = BlogPost::find($comment->post_id);
+         if (!$post) {
+            return response()->json([
+                'status' => 'Error',
+                'message' => 'Blog not found'
+            ], 404);
+        }
         $user = Auth::user();
 
         if ($user->id !== $comment->user_id && $user->role !== 'admin') {
@@ -102,16 +111,16 @@ class CommentController extends Controller
                 'message' => 'Unautherized access'
             ], 401);
         }
-
         try {
-                $totalComment = 1 + $comment->replies()->count();
-                $comment->delete();
+             $repliedComments = $comment->replies()->count();
+             $totalComment = 1+ $repliedComments ;
+             $comment->replies()->delete();
+             $comment->delete();
                 if ($post) {
                     $post->decrement('commet_count', $totalComment);
-                }
-          
+                }        
             return response()->json([
-                'status' => "Error",
+                'status' => "Success",
                 'message' => 'Deleted'
             ], 200);
         } catch (\Exception $e) {

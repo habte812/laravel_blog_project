@@ -2,9 +2,10 @@
 
 namespace App\Models;
 
-
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
+
 class BlogPost extends Model
 {
     protected $fillable = [
@@ -40,8 +41,18 @@ public function getThumbnailUrlAttribute()
 }
 public function timeAgo(): Attribute{
  return Attribute::make(
-    get: fn ()=>$this->created_at->diffForHumans()
- );
+            get: function () {
+                $date = Carbon::parse($this->published_at);
+
+                // If it was published less than 7 days ago, show "3 days ago"
+                if ($date->gt(now()->subDays(7))) {
+                    return $date->diffForHumans();
+                }
+
+                // If it's older, show a clean blog date like "April 22, 2026"
+                return $date->format('M j, Y');
+            },
+        );
 
 }
 }

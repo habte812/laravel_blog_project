@@ -294,6 +294,8 @@ class AuthController extends Controller
     public function getAuthorProfile(User $user)
     {           
         $user->loadCount(['blog_posts','followings','followers']);
+        
+        
         return response()->json([
             'status' => 'Success',
             'data' => [
@@ -304,10 +306,20 @@ class AuthController extends Controller
                 'posts_count' => $user->blog_posts_count,
                 'followings_count' => $user->followings_count,
                 'followers_count' => $user->followers_count,
+                'is_following' =>$user->is_following,
                 'is_owner'=>auth('sanctum')?->id()=== $user->id,
                 'joined_at' => $user->created_at->format('M Y'),
 
             ]
         ]);
+    }
+    public function shareAuthorProfile(string $id){
+        $user = User::withCount(['followers', 'followings', 'blog_posts'])->findOrFail($id);
+        return view('author_share', [
+        'user' => $user,
+        'profile_image' => $user->profile_picture_url 
+            ? $user->profile_picture_url
+            : 'https://ui-avatars.com/api/?name='.urlencode($user->name).'&background=3b82f6&color=fff',
+    ]);
     }
 }

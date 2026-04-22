@@ -37,9 +37,10 @@ Route::apiResource('/categories', BlogCategoryController::class)->middleware(['r
 Route::post('/email/verification',[EmailVerificationController::class, 'sendEmailVerification'])->name('verification.send');
 Route::get('/verify-email/{id}/{hash}', [EmailVerificationController::class, 'verify'])->name('verification.verify');
 
-Route::apiResource('/posts', BlogPostController::class)->middleware(['role:admin,author'])->except(['index','show']);
+
 Route::post('/posts/{user}/follow',[FollowController::class,'toggleFollow'])->name('posts.follow');
 Route::middleware('verified')->group(function(){
+Route::apiResource('/posts', BlogPostController::class)->middleware(['role:admin,author'])->except(['index','show']);
 Route::post('/posts/reaction',[LikeController::class, 'react'])->name('posts.react');
 Route::apiResource('/posts/comments', CommentController::class);
 });

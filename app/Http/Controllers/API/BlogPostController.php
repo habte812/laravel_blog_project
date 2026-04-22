@@ -153,7 +153,7 @@ class BlogPostController extends Controller
     }
     public function show(string $id)
     {
-        $post = BlogPost::with(['author:id,name,role,profile_picture', 'category:id,name,category_image', 'seo'])->find($id);    
+        $post = BlogPost::with(['author:id,name,role,profile_picture', 'category:id,name,category_image', 'seo'])->find($id);
         if (!$post):
             return response()->json([
                 'status' => "Error",
@@ -228,6 +228,7 @@ class BlogPostController extends Controller
 
             $post->seo()->update([
                 'post_id' => $post->id,
+                'updated_at'=> $post->timestamps = now(),
                 'meta_title' => $post->title,
                 'meta_description' => Str::limit(strip_tags($request->content), 160),
                 'meta_keywords' => $finalKeywords
@@ -282,10 +283,15 @@ class BlogPostController extends Controller
 
     public function sharePosts(string $id)
     {
-        $blog = BlogPost::with('seo') -> find($id);
-        if (!$blog) {
-        abort(404);
-    }
-    return view('share.post',compact('post'));
+        $post = BlogPost::with(['author' => function($q) {
+        $q->withCount(['followers', 'followings','blog_posts']);
+    }])->findOrFail($id);
+        if (!$post) {
+            abort(404);
+        }
+        return view('post', [
+            'post' => $post,
+            'share_image' => $post->thumbnail_url,
+        ], compact('post'));
     }
 }
