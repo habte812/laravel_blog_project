@@ -44,12 +44,9 @@ public function timeAgo(): Attribute{
             get: function () {
                 $date = Carbon::parse($this->published_at);
 
-                // If it was published less than 7 days ago, show "3 days ago"
                 if ($date->gt(now()->subDays(7))) {
                     return $date->diffForHumans();
                 }
-
-                // If it's older, show a clean blog date like "April 22, 2026"
                 return $date->format('M j, Y');
             },
         );
