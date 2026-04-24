@@ -35,7 +35,9 @@ class BlogReportController extends Controller
             'reason' => $request->reason,
             'details' => $request->details,
         ],);
-        return response()->json(['status' => 'Success', 'message' => 'Reported'], 201);
+        return response()->json([
+        'status' => 'Success', 
+        'message' => 'Reported'], 201);
     }
 
     public function show(string $id) {}
