@@ -3,6 +3,7 @@
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\BlogCategoryController;
 use App\Http\Controllers\API\BlogPostController;
+use App\Http\Controllers\API\BlogReportController;
 use App\Http\Controllers\API\CommentController;
 use App\Http\Controllers\API\EmailVerificationController;
 use App\Http\Controllers\API\FollowController;
@@ -39,6 +40,8 @@ Route::get('/verify-email/{id}/{hash}', [EmailVerificationController::class, 've
 
 
 Route::post('/posts/{user}/follow',[FollowController::class,'toggleFollow'])->name('posts.follow');
+Route::post('/posts/{blogId}/report',[BlogReportController::class,'store'])->name('posts.report');
+
 Route::middleware('verified')->group(function(){
 Route::apiResource('/posts', BlogPostController::class)->middleware(['role:admin,author'])->except(['index','show']);
 Route::post('/posts/reaction',[LikeController::class, 'react'])->name('posts.react');

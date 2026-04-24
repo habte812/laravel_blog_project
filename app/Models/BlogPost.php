@@ -6,6 +6,8 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 
+use function PHPUnit\Framework\isNull;
+
 class BlogPost extends Model
 {
     protected $fillable = [
@@ -18,9 +20,10 @@ class BlogPost extends Model
         'thumbnail',
         'status',
         'published_at',
+        'content_updated_at'
     ];
 
-protected $appends = ['time_ago', 'thumbnail_url'];
+protected $appends = ['time_ago', 'thumbnail_url', 'updated_content_at'];
 public function author(){
     return $this->belongsTo(User::class, 'user_id');
 }
@@ -43,16 +46,25 @@ public function timeAgo(): Attribute{
  return Attribute::make(
             get: function () {
                 $date = Carbon::parse($this->published_at);
-
-                // If it was published less than 7 days ago, show "3 days ago"
                 if ($date->gt(now()->subDays(7))) {
                     return $date->diffForHumans();
                 }
-
-                // If it's older, show a clean blog date like "April 22, 2026"
                 return $date->format('M j, Y');
             },
         );
 
+}
+
+public function updatedContentAt(): Attribute{
+    return Attribute::make(
+            get: function () {
+                if(is_null($this->content_updated_at)){return null;}
+                $date = Carbon::parse($this->content_updated_at);
+                if ($date->gt(now()->subDays(7))) {
+                    return $date->diffForHumans();
+                }
+                return $date->format('M j, Y');
+            },
+        );
 }
 }

@@ -215,10 +215,9 @@ class BlogPostController extends Controller
                 }
                 $data['thumbnail'] = null;
             endif;
-
-
             $data['slug'] = Str::slug($request->title);
-            $data['excerpt'] = Str::limit(strip_tags($request->content), 150);
+             $data['content_updated_at'] = now();
+            $data['excerpt'] =$this->getExcerptOfContent($request->content);
             $post->update($data);
 
             $category = BlogCategory::find($request->category_id);
@@ -228,7 +227,7 @@ class BlogPostController extends Controller
 
             $post->seo()->update([
                 'post_id' => $post->id,
-                'updated_at'=> $post->timestamps = now(),
+                'updated_at' => $post->timestamps = now(),
                 'meta_title' => $post->title,
                 'meta_description' => Str::limit(strip_tags($request->content), 160),
                 'meta_keywords' => $finalKeywords
@@ -248,7 +247,7 @@ class BlogPostController extends Controller
 
     public function destroy(string $id)
     {
-        $user = Auth::user();
+        $user = auth('sanctum')->user();
         $post = BlogPost::find($id);
         if (!$post):
             return response()->json([
@@ -257,11 +256,11 @@ class BlogPostController extends Controller
             ], 404);
         endif;
 
-        if ($user->id !== $post->user_id && $user->role !== 'admin'):
+        if ((int)$user->id !== (int)$post->user_id && $user->role !== 'admin'):
             return response()->json([
                 'status' => 'Error',
                 'message' => 'Unauthorized access'
-            ], 401);
+            ], 403);
         endif;
         try {
             if ($post->thumbnail && Storage::disk('public')->exists($post->thumbnail)):
@@ -270,7 +269,7 @@ class BlogPostController extends Controller
             $post->delete();
             return response()->json([
                 'status' => "Success",
-                'message' => 'Blog deleted successfully'
+                'message' => 'Deleted'
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
@@ -283,9 +282,9 @@ class BlogPostController extends Controller
 
     public function sharePosts(string $id)
     {
-        $post = BlogPost::with(['author' => function($q) {
-        $q->withCount(['followers', 'followings','blog_posts']);
-    }])->findOrFail($id);
+        $post = BlogPost::with(['author' => function ($q) {
+            $q->withCount(['followers', 'followings', 'blog_posts']);
+        }])->findOrFail($id);
         if (!$post) {
             abort(404);
         }
