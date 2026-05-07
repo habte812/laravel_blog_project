@@ -87,4 +87,10 @@ public function getIsFollowingAttribute():bool{
         ->where('follower_id', auth('sanctum')->id())
         ->exists();
 }
+
+public function savedBlogs()
+{
+    return $this->belongsToMany(BlogPost::class, 'saved_blogs', 'user_id', 'blog_id')
+                ->withTimestamps(); 
+}
 }

@@ -64,7 +64,7 @@ class BlogPostController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'Error',
-                'message' => 'Unable to fetch feed. Please try again later.'
+                'message' => "Unable to fetch feed. Please try again later.{$e->getMessage()}"
             ], 500);
         }
     }

@@ -9,6 +9,7 @@ use App\Http\Controllers\API\EmailVerificationController;
 use App\Http\Controllers\API\FollowController;
 use App\Http\Controllers\API\LikeController;
 use App\Http\Controllers\API\PostViewController;
+use App\Http\Controllers\API\SavedBlogsController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -38,9 +39,12 @@ Route::apiResource('/categories', BlogCategoryController::class)->middleware(['r
 Route::post('/email/verification',[EmailVerificationController::class, 'sendEmailVerification'])->name('verification.send');
 Route::get('/verify-email/{id}/{hash}', [EmailVerificationController::class, 'verify'])->name('verification.verify');
 
-
+Route::get('/posts/my/followings',[FollowController::class,'getMyFollowings'])->name('posts.getfollowing');
+Route::get('/posts/my/followers',[FollowController::class,'getMyFollowers'])->name('posts.getfollowers');
 Route::post('/posts/{user}/follow',[FollowController::class,'toggleFollow'])->name('posts.follow');
 Route::post('/posts/{blogId}/report',[BlogReportController::class,'store'])->name('posts.report');
+Route::get('/post/saved-blogs',[ SavedBlogsController::class, 'getMySavedBlogs'])->name('post.getSaved');
+Route::post('/post/{blog_id}/save',[ SavedBlogsController::class, 'toggleSave'])->name('post.save');
 
 Route::middleware('verified')->group(function(){
 Route::apiResource('/posts', BlogPostController::class)->middleware(['role:admin,author'])->except(['index','show']);

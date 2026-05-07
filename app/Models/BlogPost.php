@@ -23,7 +23,7 @@ class BlogPost extends Model
         'content_updated_at'
     ];
 
-protected $appends = ['time_ago', 'thumbnail_url', 'updated_content_at'];
+protected $appends = ['time_ago', 'thumbnail_url', 'updated_content_at', 'is_saved'];
 public function author(){
     return $this->belongsTo(User::class, 'user_id');
 }
@@ -35,9 +35,6 @@ public function category(){
 public function seo(){
     return $this->hasOne(Seo::class, 'post_id');
 }
-// public function getThumbnailAttribute($value){
-//     return $value? asset('storage/'.$value): null;
-// }
 public function getThumbnailUrlAttribute() 
 {
     return $this->thumbnail ? asset('storage/' . $this->thumbnail) : null;
@@ -66,5 +63,16 @@ public function updatedContentAt(): Attribute{
                 return $date->format('M j, Y');
             },
         );
+}
+public function savedByUsers()
+{
+    return $this->belongsToMany(User::class, 'saved_blogs', 'blog_id', 'user_id');
+}
+public function getIsSavedAttribute(){
+
+    if(!auth('sanctum')->check()) return false;
+    return $this->belongsToMany(User::class,'saved_blogs', 'blog_id', 'user_id')
+                ->where('user_id', auth('sanctum')->id())
+                 ->exists();
 }
 }

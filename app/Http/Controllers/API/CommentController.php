@@ -57,7 +57,7 @@ class CommentController extends Controller
     }
 
 
-    public function show(string $post_id)
+    public function show(Request $request,string $post_id)
     {
         $comments = Comment::where('post_id', $post_id)
             ->whereNull('parent_id')
