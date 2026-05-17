@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Models\BlogPost;
 use App\Models\User;
 use Illuminate\Http\Request;
 
@@ -71,7 +72,9 @@ class FollowController extends Controller
             return response()->json([
                 'status' => 'Success',
                 'message' => 'You have no followers',
-                'followers' => $followers->items()
+                'followers' => $followers->items(),
+                'next_cursor' => $followers->nextCursor()?->encode(),
+                'has_more_pages' => $followers->hasMorePages(),
             ], 200);
         }
         return response()->json([
@@ -85,5 +88,42 @@ class FollowController extends Controller
 
 
 
-   
+    public function getMyFollowingsBlog(Request $request)
+    {
+        $me = auth('sanctum')->user();
+        $followingsID = $me->followings()->pluck('users.id');
+        $blogs = BlogPost::whereIn('user_id', $followingsID)
+            ->with(['author:id,name,profile_picture', 'category:id,name'])
+            ->select(
+                'id',
+                'user_id',
+                'category_id',
+                'excerpt',
+                'title',
+                'thumbnail',
+                'published_at',
+                 'view_count',
+                 'like_count'
+            )
+            ->latest('published_at')
+            ->cursorPaginate(5);
+
+        if ($blogs->isEmpty()) {
+            return response()->json([
+                'status' => 'Success',
+                'message' => 'No blogs from your network yet',
+                'blogs' => $blogs->items(),
+                'next_cursor' => $blogs->nextCursor()?->encode(),
+                'has_more_pages' => $blogs->hasMorePages(),
+                'layout'=>[]
+            ], 200);
+        }
+        return response()->json([
+            'status' => 'Success',
+            'blogs' => $blogs->items(),
+            'next_cursor' => $blogs->nextCursor()?->encode(),
+            'has_more_pages' => $blogs->hasMorePages(),
+            'layout'=>[]
+        ], 200);
+    }
 }

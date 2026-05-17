@@ -41,6 +41,7 @@ Route::get('/verify-email/{id}/{hash}', [EmailVerificationController::class, 've
 
 Route::get('/posts/my/followings',[FollowController::class,'getMyFollowings'])->name('posts.getfollowing');
 Route::get('/posts/my/followers',[FollowController::class,'getMyFollowers'])->name('posts.getfollowers');
+Route::get('/posts/my/followings/blogs',[FollowController::class,'getMyFollowingsBlog'])->name('posts.getfollowingblogs');
 Route::post('/posts/{user}/follow',[FollowController::class,'toggleFollow'])->name('posts.follow');
 Route::post('/posts/{blogId}/report',[BlogReportController::class,'store'])->name('posts.report');
 Route::get('/post/saved-blogs',[ SavedBlogsController::class, 'getMySavedBlogs'])->name('post.getSaved');
